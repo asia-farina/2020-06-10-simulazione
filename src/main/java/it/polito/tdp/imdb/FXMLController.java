@@ -5,8 +5,10 @@
 package it.polito.tdp.imdb;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.imdb.model.Actor;
 import it.polito.tdp.imdb.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -35,10 +37,10 @@ public class FXMLController {
     private Button btnSimulazione; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxGenere"
-    private ComboBox<?> boxGenere; // Value injected by FXMLLoader
+    private ComboBox<String> boxGenere; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxAttore"
-    private ComboBox<?> boxAttore; // Value injected by FXMLLoader
+    private ComboBox<Actor> boxAttore; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtGiorni"
     private TextField txtGiorni; // Value injected by FXMLLoader
@@ -48,16 +50,59 @@ public class FXMLController {
 
     @FXML
     void doAttoriSimili(ActionEvent event) {
-
+    	txtResult.clear();
+    	List<Actor> attori;
+    	try {
+    		   attori=model.raggiungibili(boxAttore.getValue());
+    	} catch (NullPointerException e) {
+    		txtResult.appendText("Seleziona un attore");
+    		return ;
+    	}
+        String s="ATTORI RAGGIUNGIBILI:\n";
+        if (attori.size()==0) {
+        	s+="Non ci sono attori raggiungibili";
+        } else {
+        	for (Actor a:attori) {
+        		s+=a.toString()+"\n";
+        	}
+        }
+        txtResult.appendText(s);     
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
-
+    	txtResult.clear();
+    	try {
+    		model.creaGrafo(boxGenere.getValue());
+    	} catch (NullPointerException e) {
+    		txtResult.appendText("Seleziona un genere");
+    		return ;
+    	}
+    	boxAttore.getItems().addAll(model.getAttori());
+        txtResult.appendText("GRAFO CREATO"+"\n"+"#VERTICI: "+model.getNumVertici()+"\n"+"#ARCHI: "+model.getNumArchi());
     }
 
     @FXML
     void doSimulazione(ActionEvent event) {
+    	txtResult.clear();
+    	int giorni;
+    	try {
+    		String s=txtGiorni.getText();
+    		giorni=Integer.parseInt(s);
+    	} catch (NumberFormatException e) {
+    		txtResult.appendText("Inserire un numero valido");
+    		return ;
+    	}
+    	
+    	model.initialize(giorni);
+    	model.run();
+    	String ss="INTERVISTATI: \n";
+    	Actor intervistati []=model.getIntervistati();
+    	for (int i=0; i<intervistati.length; i++) {
+    		ss+="Giorno "+(i+1)+": "+intervistati[i].toString()+"\n";
+    	}
+    	ss+="NUMERO PAUSE: "+model.getPause();
+    	txtResult.appendText(ss);
 
     }
 
@@ -75,5 +120,6 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	boxGenere.getItems().addAll(model.getGeneri());
     }
 }
